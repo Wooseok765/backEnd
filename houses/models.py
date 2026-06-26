@@ -12,10 +12,11 @@ class House(models.Model): # inherites superclass
     # Defining type of the value
     # charField : text having limit of the length
     
-    price = models.PositiveBigIntegerField()
+    price_per_night = models.PositiveBigIntegerField()
     # 양수 숫자 타입을 말함
     
     description = models.TextField()
     # longer than charField
     
     address = models.CharField(max_length=140)
+    pets_allowed = models.BooleanField(default=True)
