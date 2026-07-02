@@ -8,6 +8,8 @@ from rooms.models import Room, Amenity
 class RoomAdmin(admin.ModelAdmin):
     list_display = (
         "name",
+        "category",
+        "total_amenities",
         "country",
         "city",
         "price",
@@ -29,6 +31,11 @@ class RoomAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     )
+    
+    def total_amenities(self, room):
+        return room.amenity.count()
+    
+    total_amenities.shortdescription = "total amenities"
 
 
 @admin.register(Amenity)

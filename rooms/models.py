@@ -14,10 +14,10 @@ class Amenity(CommonModel):
         null=True,
         blank=True,
     )
-    
+
     def __str__(self):
         return self.name
-    
+
     class Meta:
         verbose_name_plural = "Amenities"
 
@@ -38,9 +38,16 @@ class Room(CommonModel):
             "shared",
             "Shared room",
         )
+
     name = models.CharField(max_length=140, default="")
-    country = models.CharField(max_length=50, default="Ireland")
-    city = models.CharField(max_length=60, default="Dublin")
+    country = models.CharField(
+        max_length=50,
+        default="Ireland",
+    )
+    city = models.CharField(
+        max_length=60,
+        default="Dublin",
+    )
     price = models.PositiveBigIntegerField()
     number_of_room = models.PositiveBigIntegerField()
     toilets = models.PositiveBigIntegerField()
@@ -54,12 +61,19 @@ class Room(CommonModel):
     owner = models.ForeignKey(
         "users.User",
         on_delete=models.CASCADE,
+        related_name="rooms",
     )
     amenity = models.ManyToManyField(
         "Amenity",
+        related_name="rooms",
     )
-    
-    
-    
+    category = models.ForeignKey(
+        "categories.Category",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="rooms"
+    )
+
     def __str__(self):
         return self.name

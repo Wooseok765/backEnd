@@ -16,9 +16,20 @@ class User(AbstractUser):
         WON = ("won", "Won(KOREA)")
         DOLLAR = ("dollar", "Dollar(USA)")
 
-    first_name = models.CharField(max_length=150, blank=True, editable=False)
-    last_name = models.CharField(max_length=150, blank=True, editable=False)
-    name = models.CharField(max_length=140, default="")
+    first_name = models.CharField(
+        max_length=150,
+        blank=True,
+        editable=False,
+    )
+    last_name = models.CharField(
+        max_length=150,
+        blank=True,
+        editable=False,
+    )
+    name = models.CharField(
+        max_length=140,
+        default="",
+    )
     is_host = models.BooleanField(default=False)
     profile_photo = models.ImageField(blank=True)
     gender = models.CharField(
