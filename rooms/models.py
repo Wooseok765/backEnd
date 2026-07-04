@@ -77,3 +77,13 @@ class Room(CommonModel):
 
     def __str__(self):
         return self.name
+    
+    def rating(self):
+        count = self.reviews.count()
+        total_rate = 0
+        if count == 0:
+            return "No review"
+        else:
+            for temp in self.reviews.all().values("rating"):
+                total_rate += temp["rating"]
+        return round((total_rate / count), 2)
