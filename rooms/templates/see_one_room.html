@@ -1,0 +1,20 @@
+{% if not not_found%}
+<h1>{{room.name}}</h1><br />
+<h5>Country: {{room.country}}</h3>
+    <h5>City: {{room.city}}</h5>
+    <h5>Price: {{room.price}}</h5>
+    <h5>Number of rooms: {{room.number_of_room}}</h5>
+    <h5>Number of Toilets: {{room.toilets}}</h5>
+    <h5>Address: {{room.address}}</h5>
+    <h5>Pet friendly: {{room.pet_friendly}}</h5>
+    <h5>Sort of room: {{room.room_kind}} room</h5>
+    <h5>House owenr: {{room.owner}}</h5>
+    <h5>Amenities: </h5>
+    {% for amenity in room.amenity.all %}
+    <h5>- {{amenity.name}}: {{amenity.description}}</h5>
+    {%endfor%}
+    <h5>Sort of rent: {{room.category.name}}</h5>
+    <p>Description: {{room.description}}</p>
+    {%else%}
+    <h1>404 Not Found</h1>
+    {%endif%}
