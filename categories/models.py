@@ -13,8 +13,6 @@ class Category(CommonModel):
     kind = models.CharField(
         max_length=50,
         choices=KindChoice.choices,
-        null=True,
-        blank=True,
     )
     def __str__(self):
         return f"{self.kind.title()}: {self.name}"
