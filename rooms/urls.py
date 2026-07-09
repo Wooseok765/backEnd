@@ -3,15 +3,11 @@ from rooms import views
 
 urlpatterns = [
     path(
-        "",
-        views.say_room,
+        "amenities/",
+        views.Amenities.as_view(),
     ),
-    path(
-        "<int:roomNumber>",
-        views.show_one_room,
-    ),
-    path(
-        "<str:myTemplate>",
-        views.call_template,
+    path( 
+        "amenities/<int:pk>",
+        views.AmenityDetail.as_view(),
     ),
 ]

@@ -1,40 +1,58 @@
-from django.shortcuts import render
-from django.http import HttpResponse
-from rooms.models import Room
+from rest_framework.views import APIView
+from rooms.models import Amenity
+from rooms.serializer import AmenitySerializer
+from rest_framework.response import Response
+from rest_framework.exceptions import NotFound
+from rest_framework.status import HTTP_204_NO_CONTENT
 
 
-# Create your views here.
-def say_room(request):
-    return HttpResponse("Room root URL")
+class Amenities(APIView):
+    def get(self, request):
+        all_amenities = Amenity.objects.all()
+        serializer = AmenitySerializer(
+            all_amenities, many=True
+        )  # 아직 serialize 안된 model object를 반환
+        return Response(serializer.data)
+
+    def post(self, request):
+        serializer = AmenitySerializer(data=request.data)
+        if serializer.is_valid():
+            amenity = serializer.save()  # 아직 serialize 안된 model object를 반환
+            return Response(AmenitySerializer(amenity).data)
+        else:
+            return Response(serializer.errors)
 
 
-def show_one_room(request, roomNumber):
-    try:
-        room = Room.objects.get(pk=roomNumber)
-        return render(
-            request,
-            "see_one_room.html",
-            {
-                "room": room,
-            },
+class AmenityDetail(APIView):
+    def get_object(self, pk):
+        try:
+            return Amenity.objects.get(pk=pk)
+        except Amenity.DoesNotExist:
+            raise NotFound()
+
+    def get(self, request, pk):
+        amenity = self.get_object(pk)
+        serializer = AmenitySerializer(amenity)
+        return Response(
+            serializer.data,
         )
-    except Room.DoesNotExist:  # DoesNotExist is an exception classes. It occurs when no matching data exists in the model(Room this case)
-        return render(
-            request,
-            "see_one_room.html",
-            {
-                "not_found": True,
-            },
+
+    def put(self, request, pk):
+        amenity = self.get_object(pk)
+        serializer = AmenitySerializer(
+            amenity,
+            data=request.data,
+            partial=True,
         )
+        if serializer.is_valid():
+            updated = serializer.save()
+            return Response(
+                AmenitySerializer(updated).data,
+            )
+        else:
+            return Response(serializer.errors)
 
-
-def call_template(request, myTemplate):
-    rooms = Room.objects.all()
-    return render(
-        request,
-        "sample.html",
-        {
-            "roomName": rooms,
-            "text": "hello, suckers",
-        },
-    )
+    def delete(self, request, pk):
+        amenity = self.get_object(pk)
+        amenity.delete()
+        return Response(status=HTTP_204_NO_CONTENT)
