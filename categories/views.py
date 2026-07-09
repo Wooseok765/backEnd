@@ -11,53 +11,45 @@ from rest_framework.views import APIView
 
 
 # Create your views here.
-
-
-@api_view(["GET", "POST"])  # 장고 REST 프레임 워크를 사용하는 함수라는 뜻
-def categories(request):
-    if request.method == "GET":
+class Categories(APIView):
+    def get(self, request):
         all_categories = Category.objects.all()
-        # Bring python objects
-
         serializers = CategorySerializer(
             all_categories,
             many=True,
-        )  # prepare to be serialized
-
+        )
         return Response(serializers.data)
-    elif request.method == "POST":
+
+    def post(self, request):
         serialized_data_from_user = CategorySerializer(
             data=request.data,
-        )  # Prepare to be valided(making python object)
-
+        )
         if serialized_data_from_user.is_valid():
             model_object = serialized_data_from_user.save()
             return Response(
                 CategorySerializer(model_object).data,
-                # prepare to be serialized
             )
         else:
             return Response(serialized_data_from_user.errors)
 
 
-@api_view(["GET", "PUT", "DELETE"])
-def category(request, pk):
-    try:
-        category = Category.objects.get(pk=pk)
-        # same as CategorySerializer(category).data
-    except Category.DoesNotExist:
-        raise NotFound
-
-    if request.method == "GET":
-        serializer = CategorySerializer(category)
+class CategoryDetail(APIView):
+    def get_object(self, pk):
+        try:
+            category = Category.objects.get(pk=pk)
+        except Category.DoesNotExist:
+            raise NotFound
+        return category
+    
+    def get(self, request, pk):
+        serializer = CategorySerializer(self.get_object(pk))
         return Response(serializer.data)
-    elif request.method == "PUT":
+
+    def put(self, request, pk):
         serializer = CategorySerializer(
-            category,
+            self.get_object(pk),
             data=request.data,
             partial=True,
-            # Allow to update partially even though a certain field has field option required
-            # 없는 필드가 request.data로 들어올 경우 is_valid()에서 무시되고(에러안남) 기존 값이 불러짐
         )
         if serializer.is_valid():
             updated_category = serializer.save()
@@ -65,6 +57,7 @@ def category(request, pk):
         else:
             return Response(serializer.errors)
 
-    elif request.method == "DELETE":
-        category.delete()
+    def delete(self, request, pk):
+        self.get_object(pk).delete()
         return Response(status=HTTP_204_NO_CONTENT)
+
