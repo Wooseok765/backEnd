@@ -11,26 +11,6 @@ from rest_framework.views import APIView
 
 
 # Create your views here.
-class Categories(APIView):
-    def get(self, request):
-        all_categories = Category.objects.all()
-        serializers = CategorySerializer(
-            all_categories,
-            many=True,
-        )
-        return Response(serializers.data)
-
-    def post(self, request):
-        serialized_data_from_user = CategorySerializer(
-            data=request.data,
-        )
-        if serialized_data_from_user.is_valid():
-            model_object = serialized_data_from_user.save()
-            return Response(
-                CategorySerializer(model_object).data,
-            )
-        else:
-            return Response(serialized_data_from_user.errors)
 
 
 @api_view(["GET", "POST"])  # 장고 REST 프레임 워크를 사용하는 함수라는 뜻
