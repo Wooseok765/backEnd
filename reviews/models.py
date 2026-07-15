@@ -30,7 +30,10 @@ class Review(CommonModel):
         related_name="reviews",
     )
     payload = models.TextField()
-    rating = models.PositiveBigIntegerField(max_length=10, choices=RatingChoice.choices)
+    rating = models.PositiveBigIntegerField(
+        max_length=10,
+        choices=RatingChoice.choices,
+    )
 
     def __str__(self):
         return f"ID: {self.user} / Rating: {self.rating}"
