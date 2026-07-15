@@ -11,6 +11,12 @@ class AmenitySerializer(ModelSerializer):
     class Meta:
         model = Amenity
         fields = ("name", "description")
+        
+        
+class AmenitySerializerAll(ModelSerializer):
+    class Meta:
+        model = Amenity
+        fields = ("__all__")
 
 
 class RoomSerializer(ModelSerializer):
@@ -83,12 +89,4 @@ class RoomDetailSerializer(ModelSerializer):
         # room 객체의 owner와 request의 user(로그인 중인 사용자)가 동일한지 비교
         # 해당 필드가 true일 때 유저에게 수정, 삭제 등의 기능을 보여주는 등 활용 가능
 
-    reviews = ReviewSerializer(
-        many=True,
-        read_only=True,
-    )
-    # 각 방 사용자가 생성한 리뷰들을 reviews.serializer.py에 정의된 방식으로 표기하는 것
-    # reverse accessor는 review.model에서 room 을 relational field로 선언할 때 room 객체에 자동으로 생성되었음
-    # 그래서 하나의 room 객체가 가지는 모든 review 객체들을 reverse accessor인 reviews로 접근가능함
-    # 속성 이름을 reverse accessor와 일치시켜야함(기본값:  review_set, reviews.model에서 선언 시 related_name="reviews"로 바꾼상태)
-    # Django가 위 코드를 보고 room.reviews를 찾아서 적용시킨다(reverse accessor) 이때 room.reviews는 quretySet이기 때문에 many=True가 필요함
+    

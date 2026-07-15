@@ -2,6 +2,7 @@ from rest_framework.views import APIView
 from rooms.models import Amenity, Room
 from rooms.serializer import (
     AmenitySerializer,
+    AmenitySerializerAll,
     RoomSerializer,
     RoomListSerializer,
     RoomDetailSerializer,
@@ -16,6 +17,7 @@ from rest_framework.exceptions import (
 from rest_framework.status import HTTP_204_NO_CONTENT
 from categories.models import Category
 from django.db import transaction
+from reviews.serializer import ReviewSerializer
 
 
 class Amenities(APIView):
@@ -208,3 +210,65 @@ class RoomDetail(APIView):
             raise PermissionDenied
         room.delete()
         return Response(status=HTTP_204_NO_CONTENT)
+
+
+class RoomReviews(APIView):
+    def get_objects(self, pk):
+        try:
+            return Room.objects.get(pk=pk)
+        except Room.DoesNotExist:
+            raise NotFound
+
+    def get(self, request, pk):
+        try:
+            page = request.query_params.get(
+                "page", 1
+            )  # http://127.0.0.1:8000/api/v1/rooms/1/reviews를 했을때 기본값 반환(page=1)
+            # reverse serializer로는 모든 객체를 한 번에 반환하기 때문에 객체가 많아지면 비효율
+            # pagination을 하기 위해 url에 들어있는 querty_parameter(중에서 page 속성)의 값을 가져오는것
+            # Django에서 .../.../...?page= 식으로 pagination 할 수 있게 자동으로 설정되며 등호 뒤에 숫자로 페이지 설정가능
+            # string type이 반환되기에 변환 필요
+            page = int(
+                page
+            )  # page= 뒤에 숫자가 아닌값을 넣으면 오류발생함(기본값 불러오기도 안됨 그건 아무것도 안적거나 없는 '숫자'를 넣었을때 발동)
+        except ValueError:  # page 1로 보내버림
+            page = 1
+        page_size = 3
+        start = (page - 1) * page_size
+        end = start + page_size
+        room = self.get_objects(pk)
+        reviews = room.reviews.all()[
+            start:end
+        ]  # query_parameter가 새로 들어올 때마다 화면에 해당하는 순번의 리뷰들을 표시(페이지를 구분했다는 뜻)
+        # reviews = room.reviews.all()[0:3] # 첫 번째부터 세번째 리뷰만 받아오는것
+        # reverse accessor
+        serializer = ReviewSerializer(
+            reviews,
+            many=True,
+        )
+        return Response(serializer.data)
+
+
+class RoomAmenity(APIView):
+    def get_object(self, pk):
+        try:
+            return Room.objects.get(pk=pk)
+        except Room.DoesNotExist:
+            raise ParseError("Room not found")
+
+    def get(self, request, pk):
+        try:
+            page = request.query_params.get("page", 1)
+            page = int(page)
+        except ValueError:
+            page = 1
+        page_size = 2
+        start = (page - 1) * page_size
+        end = start + page_size
+        room = self.get_object(pk)
+        amenities = room.amenity.all()[start:end]
+        serializer = AmenitySerializerAll(
+            amenities,
+            many=True,
+        )
+        return Response(serializer.data)
