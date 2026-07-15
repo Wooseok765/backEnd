@@ -272,3 +272,8 @@ class RoomAmenity(APIView):
             many=True,
         )
         return Response(serializer.data)
+
+class RoomPhotos(APIView):
+    def post(self, request, pk): # 특정 room 객체에 넣을 사진이기 때문에 pk 필요
+        pass 
+        

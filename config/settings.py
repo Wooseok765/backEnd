@@ -137,3 +137,10 @@ STATIC_URL = "static/"
 
 # Auth
 AUTH_USER_MODEL = "users.User"
+
+# Place to store media file
+MEDIA_ROOT = "uploads" # 미디어 파일 업로드 시 uploads라는 폴더 내에 저장된다, 없을경우 manage.py와 같은 위치에 저장됨
+# 실제 배포시 MEDIA_URL이 접근할 수 있는 서버저장소로 바꿔야함
+
+MEDIA_URL = "user_uploads/" # 업로드된 사진이나 동영상은 브라우저에서 /user_uploads/로 시작하는 주소를 통해 접근한다. 끝에 / 필수
+# 화면 로딩 시 해당 주소+파일이름으로 요청을 보내서 사진/동영상을 로드함
