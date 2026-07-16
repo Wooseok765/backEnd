@@ -5,6 +5,7 @@ from .models import Room
 from users.serializers import TinyUserSerializer
 from categories.serialisers import CategorySerializer
 from reviews.serializer import ReviewSerializer
+from medias.serializers import PhotoSerializer
 
 
 class AmenitySerializer(ModelSerializer):
@@ -36,12 +37,14 @@ class RoomListSerializer(ModelSerializer):
             "city",
             "price",
             "rating",
+            "photos",
             "is_owner",
         )
         # "__all__"이 아니기 때문에 새로 만든 필드를 추가해주어야한다
 
     rating = serializers.SerializerMethodField()
     is_owner = serializers.SerializerMethodField()
+    photos = PhotoSerializer(many=True,read_only=True)
 
     def get_is_owner(self, room):
         return room.owner == self.context["request"].user
@@ -62,15 +65,19 @@ class RoomDetailSerializer(ModelSerializer):
     category = CategorySerializer(
         read_only=True,
     )
+    photos = PhotoSerializer(many=True,read_only=True)
+    # read_only는 room 객체 생성 시 photos의 값을 받아도 무시, 외부에서 생성된 사진을 받아서 표시만 한다는 뜻
+    # photo 객체는 단독으로 생성해야한다는 의미
+    # photos라는 필드는 현재 Room 모델의 필드값이 아님, 외부에서 받아서 표시하는것(reverse accessor 사용)
 
     class Meta:
         model = Room
         fields = "__all__"
 
     rating = serializers.SerializerMethodField()
-    # 현재 클레스를 사용하는 모델에 없는 필드를 생성 함
-    # potato의 value는 내부 메서드를 호출하여 가져오는 것(get_ 메서드의 반환값)
-    # get_potato라는 메서드를 현재 serializer class가 직렬화 하고있는 오브젝트와 함께 호춣함
+    # 현재 클레스를 사용하는 모델에(rooms) 없는 필드를 가져옴
+    # rating의 value는 내부 메서드를 호출하여 가져오는 것(get_ 메서드의 반환값)
+    # get_rating이라는 메서드를 현재 serializer class가 직렬화 하고있는 오브젝트와 함께 호춣함
     # 해당 오브젝트는 get_ 메서드의 두 번째 arguemnt로 들어감
     # 모델이 가지고있는 않은(외부에서 참조하는) 값을 을 표시할 때 필요함
 

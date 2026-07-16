@@ -5,11 +5,11 @@ from common.models import CommonModel
 # Create your models here.
 class Review(CommonModel):
     class RatingChoice(models.IntegerChoices):
-        star1 = ("1", "⭐")
-        star2 = ("2", "⭐⭐")
-        star3 = ("3", "⭐⭐⭐")
-        star4 = ("4", "⭐⭐⭐⭐")
-        star5 = ("5", "⭐⭐⭐⭐⭐")
+        star1 = (1, "⭐")
+        star2 = (2, "⭐⭐")
+        star3 = (3, "⭐⭐⭐")
+        star4 = (4, "⭐⭐⭐⭐")
+        star5 = (5, "⭐⭐⭐⭐⭐")
 
     user = models.ForeignKey(
         "users.User",
@@ -31,7 +31,6 @@ class Review(CommonModel):
     )
     payload = models.TextField()
     rating = models.PositiveBigIntegerField(
-        max_length=10,
         choices=RatingChoice.choices,
     )
 

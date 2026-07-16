@@ -20,6 +20,9 @@ from django.db import transaction
 from reviews.serializer import ReviewSerializer
 from medias.serializers import PhotoSerializer
 from medias.models import Photo
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+
+# HTTP request가 get인 경우 누구나 통과시킴, 나머지 요청의 경우 사용자 일치여부 진행
 
 
 class Amenities(APIView):
@@ -75,6 +78,10 @@ class AmenityDetail(APIView):
 
 
 class Rooms(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    # Rooms API(현재 클래스를 말함)을 사용하는 url(ip/api/v1/rooms/)로 접근하는 경우
+    # 접근자의 로그인여부를 확인하여 비로그인시 get handler에만 접근 허용, 로그인시 나머지도 승인
     def get(self, request):
         all_rooms = Room.objects.all()
         serilizer = RoomListSerializer(
@@ -87,53 +94,52 @@ class Rooms(APIView):
         return Response(serilizer.data)
 
     def post(self, request):
-        if request.user.is_authenticated:
-            serializer = RoomDetailSerializer(data=request.data)
-            if serializer.is_valid():
-                category_pk = request.data.get("category")
-                if not category_pk:
-                    raise ParseError("Category is required.")
-                try:
-                    categoryObj = Category.objects.get(pk=category_pk)
-                    if categoryObj.kind == Category.KindChoice.EXPERIENCES:
-                        raise ParseError("The category kind should be 'rooms'")
 
-                except Category.DoesNotExist:
-                    raise ParseError("Category not found")
-                try:
-                    with transaction.atomic():
-                        # transaction 모듈의 아토믹 클래스
-                        # Django가 with 내부의 코드들을 검수하며 임시저장함
-                        # 오류 없을 시 적용, 오류 발생 시 임시저장파일 삭제
-                        # 생성 후 삭제하는것 보다 효율적(id 누적문제 등)
-                        room = serializer.save(
-                            owner=request.user,
-                            category=categoryObj,
-                        )
+        serializer = RoomDetailSerializer(data=request.data)
+        if serializer.is_valid():
+            category_pk = request.data.get("category")
+            if not category_pk:
+                raise ParseError("Category is required.")
+            try:
+                categoryObj = Category.objects.get(pk=category_pk)
+                if categoryObj.kind == Category.KindChoice.EXPERIENCES:
+                    raise ParseError("The category kind should be 'rooms'")
 
-                        amenity_list = request.data.get(
-                            "amenity"
-                        )  # It means the numbers user entered as a list form
-                        for amenityItem in amenity_list:
-                            amenity = Amenity.objects.get(pk=amenityItem)
-                            room.amenity.set(amenity)
+            except Category.DoesNotExist:
+                raise ParseError("Category not found")
+            try:
+                with transaction.atomic():
+                    # transaction 모듈의 아토믹 클래스
+                    # Django가 with 내부의 코드들을 검수하며 임시저장함
+                    # 오류 없을 시 적용, 오류 발생 시 임시저장파일 삭제
+                    # 생성 후 삭제하는것 보다 효율적(id 누적문제 등)
+                    room = serializer.save(
+                        owner=request.user,
+                        category=categoryObj,
+                    )
 
-                        # room.amenity DB table에 행 추가(room id랑 amenity id로 이루어진 DB)
-                        # 양 객체 모두 다른 객체 여러개와 연결될 수 있기에 추가적인 테이블에서 관리(각자의 DB table에 해당항목 표시 안함)
-                        # .save()하면서 부여받은 roon pk를 기준으로 amenity id를 열에 배치함
-                        serializer = RoomDetailSerializer(room)
-                        return Response(serializer.data)
-                except Exception:
-                    raise ParseError("Amenity not found")
-                    # with 구문 내에서 오류발생했다는것을 알려 줌
-                    # 어떤 코드가 오류발생할 수 있는 것인지는 작성자가 판단해야함
-            else:
-                return Response(serializer.errors)
+                    amenity_list = request.data.get(
+                        "amenity"
+                    )  # It means the numbers user entered as a list form
+                    for amenityItem in amenity_list:
+                        amenity = Amenity.objects.get(pk=amenityItem)
+                        room.amenity.set(amenity)
+
+                    # room.amenity DB table에 행 추가(room id랑 amenity id로 이루어진 DB)
+                    # 양 객체 모두 다른 객체 여러개와 연결될 수 있기에 추가적인 테이블에서 관리(각자의 DB table에 해당항목 표시 안함)
+                    # .save()하면서 부여받은 roon pk를 기준으로 amenity id를 열에 배치함
+                    serializer = RoomDetailSerializer(room)
+                    return Response(serializer.data)
+            except Exception:
+                raise ParseError("Amenity not found")
+                # with 구문 내에서 오류발생했다는것을 알려 줌
+                # 어떤 코드가 오류발생할 수 있는 것인지는 작성자가 판단해야함
         else:
-            raise NotAuthenticated
+            return Response(serializer.errors)
 
 
 class RoomDetail(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_object(self, pk):
         try:
@@ -150,8 +156,6 @@ class RoomDetail(APIView):
 
     def put(self, request, pk):
         room = self.get_object(pk)
-        if not request.user.is_authenticated:
-            raise NotAuthenticated
 
         if room.owner != request.user:
             raise PermissionDenied(
@@ -215,6 +219,8 @@ class RoomDetail(APIView):
 
 
 class RoomReviews(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
     def get_objects(self, pk):
         try:
             return Room.objects.get(pk=pk)
@@ -250,6 +256,24 @@ class RoomReviews(APIView):
         )
         return Response(serializer.data)
 
+    def post(self, request, pk):
+        serializer = ReviewSerializer(data=request.data)
+        # request.data를 ReviewSerializer의 쓰기 가능한 필드로 검증한다.
+        # user는 read_only=True이므로 입력·검증 대상에서 제외되고,
+        # 사용자가 직접 입력하는 값은 payload와 rating이다.
+        if serializer.is_valid():
+            review = serializer.save(
+                user=request.user,
+                room=self.get_objects(pk),
+            )
+            # 검증된 payload, rating에
+            # 서버가 결정한 user와 room을 추가하여 Review 객체를 생성한다.(review 객체의 필드인 user, room을 서버에서 가져온다)
+            # user = 로그인 한 사용자, room = 리뷰를 작성하고있는 방
+            # user와 room은 Review 모델의 실제 필드명과 일치해야 한다.
+            serializer = ReviewSerializer(review)
+            return Response(serializer.data)
+      
+
 
 class RoomAmenity(APIView):
     def get_object(self, pk):
@@ -275,20 +299,27 @@ class RoomAmenity(APIView):
         )
         return Response(serializer.data)
 
+
 class RoomPhotos(APIView):
     def get_object(self, pk):
         try:
             return Room.objects.get(pk=pk)
         except Room.DoesNotExist:
             raise ParseError(f"room({pk}) not found")
-        
-    def post(self, request, pk): # 특정 room 객체에 넣을 사진이기 때문에 pk 필요
+
+    def post(self, request, pk):  # 특정 room 객체에 넣을 사진이기 때문에 pk 필요
         room = self.get_object(pk)
-        if not request.user.is_authenticated: # 사진 업로드하는 사람이 해당 Room 객체의 주인인지 확인하는 과정
+        if (
+            not request.user.is_authenticated
+        ):  # 사진 업로드하는 사람이 로그인 된 사람인지 체크
             raise NotAuthenticated
-        if request.user != room.owner:
+        if (
+            request.user != room.owner
+        ):  # 사진 업로드 유저가 외부키로 합쳐질 room객체의 owner와 동일한지 체크
             raise self.permission_denied
-        serializer = PhotoSerializer(data=request.data) # 유저가 업로드하는 사진/영상을 받는것
+        serializer = PhotoSerializer(
+            data=request.data
+        )  # 유저가 업로드하는 사진/영상을 받는것
         if serializer.is_valid():
             photo = serializer.save(rooms=room)
             # 검증된 데이터를 DB에 저장하는 단계

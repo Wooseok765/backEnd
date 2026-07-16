@@ -24,6 +24,8 @@ urlpatterns = [
     path("api/v1/rooms/", include("rooms.urls")),
     path("api/v1/categories/", include("categories.urls")),
     path("api/v1/experiences/", include("experiences.urls")),
+    path("api/v1/medias/", include("medias.urls")),
+    path("api/v1/wishlists/", include("wishlists.urls")),
 ]+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 # + static() :# /user_uploads/ 뒤에 오는 경로를 받아서 MEDIA_ROOT 안에서 같은 상대 경로의 파일을 찾아 반환한다.
 # 사진을(resource마다 url이 필요한데) 올릴때마다 path를 추가하지 않기위해 포괄적인 규칙의 url을 요청시마다 생성하여 실행함
