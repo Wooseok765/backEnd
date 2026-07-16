@@ -18,6 +18,8 @@ from rest_framework.status import HTTP_204_NO_CONTENT
 from categories.models import Category
 from django.db import transaction
 from reviews.serializer import ReviewSerializer
+from medias.serializers import PhotoSerializer
+from medias.models import Photo
 
 
 class Amenities(APIView):
@@ -274,6 +276,24 @@ class RoomAmenity(APIView):
         return Response(serializer.data)
 
 class RoomPhotos(APIView):
-    def post(self, request, pk): # 특정 room 객체에 넣을 사진이기 때문에 pk 필요
-        pass 
+    def get_object(self, pk):
+        try:
+            return Room.objects.get(pk=pk)
+        except Room.DoesNotExist:
+            raise ParseError(f"room({pk}) not found")
         
+    def post(self, request, pk): # 특정 room 객체에 넣을 사진이기 때문에 pk 필요
+        room = self.get_object(pk)
+        if not request.user.is_authenticated: # 사진 업로드하는 사람이 해당 Room 객체의 주인인지 확인하는 과정
+            raise NotAuthenticated
+        if request.user != room.owner:
+            raise self.permission_denied
+        serializer = PhotoSerializer(data=request.data) # 유저가 업로드하는 사진/영상을 받는것
+        if serializer.is_valid():
+            photo = serializer.save(rooms=room)
+            # 검증된 데이터를 DB에 저장하는 단계
+            # Photo 객체의 필드인 room(foreignkey type)의 값을 지정하는것(pk값으로 DB에서 가져온 객체)
+            serializer = PhotoSerializer(photo)
+            return Response(serializer.data)
+        else:
+            return Response(serializer.errors)

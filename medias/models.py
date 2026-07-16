@@ -5,7 +5,9 @@ from common.models import CommonModel
 
 
 class Photo(CommonModel):
-    file = models.ImageField()
+    file = models.URLField()
+    # imageField혹은 fileField 타입으로 Django에 직접 외부자료를 업로드하게끔 하는것은 위험함(해킹 등)
+    # 외부 호스팅 전문 서버에 파일을 업로드 시키고 Django에는 해당 파일에 접근 가능한 url을 제공하는것이 안전
     description = models.TextField()
     rooms = models.ForeignKey(
         "rooms.Room",
@@ -27,7 +29,7 @@ class Photo(CommonModel):
 
 
 class Video(CommonModel):
-    file = models.FileField()
+    file = models.URLField()
     experiences = models.OneToOneField(
         "experiences.Experience",
         on_delete=models.CASCADE,
