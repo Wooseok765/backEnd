@@ -48,6 +48,9 @@ class RoomListSerializer(ModelSerializer):
 
     def get_is_owner(self, room):
         return room.owner == self.context["request"].user
+    # view.py에서부터 전달받은 객체를(http request에서 추출한) 사용하는것
+    # 예) 현재 사용자가 로그인했는지 여부
+    # self.context["request"].user : 현재 로그인 한 사용자 정보
 
     def get_rating(self, room):
         return room.rating()

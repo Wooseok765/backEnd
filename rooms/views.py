@@ -89,7 +89,7 @@ class Rooms(APIView):
             many=True,
             context={
                 "request": request,
-            },
+            },# 현재 HTTP 요청 객체를 serializer 내부로 전달해서, serializer가 요청 정보에 접근할 수 있게 하는 것
         )
         return Response(serilizer.data)
 
