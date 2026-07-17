@@ -6,6 +6,8 @@ from users.serializers import TinyUserSerializer
 from categories.serialisers import CategorySerializer
 from reviews.serializer import ReviewSerializer
 from medias.serializers import PhotoSerializer
+from wishlists.models import Wishlist
+
 
 
 class AmenitySerializer(ModelSerializer):
@@ -39,15 +41,27 @@ class RoomListSerializer(ModelSerializer):
             "rating",
             "photos",
             "is_owner",
+            "is_liked",
         )
         # "__all__"이 아니기 때문에 새로 만든 필드를 추가해주어야한다
 
     rating = serializers.SerializerMethodField()
     is_owner = serializers.SerializerMethodField()
-    photos = PhotoSerializer(many=True,read_only=True)
+    is_liked = serializers.SerializerMethodField()
     # serializer method fields(모델에 실제 필드가 없거나, 그대로 보여주면 원하는 형태가 아닐 때, serializer에서 값을 직접 계산해서 출력하기 위해 사용, 읽기전용이다, 필드값을 구현할 전용함수필요)
+    
+    photos = PhotoSerializer(many=True,read_only=True)
+    
+    def get_is_liked(self, room):
+        request = self.context["request"]
+        return Wishlist.objects.filter(user=request.user, rooms__pk=room.pk).exists()
+        # HTTP request에서 받아낸, 접속시도한자의 정보와 일치하는 위시리스트들을 반환
+        # 그 위시리스트들 중에서 안에서 rooms를 사용하여 id가 request에서 딸려온 id와 동일한 객체를 포함하고있는 wishlist를 반환
+        # 즉, 로그인 한 사용자가 해당 객체를 위시리스트에 담았는지 여부 확인하는것
+        # rooms__pk는 wishlist의 field값인 rooms list내에 저장된 객체들의 아이디를 기준으로 검색하는것
+        
 
-    def get_is_owner(self, room):
+    def get_is_owner(self, room):        
         return room.owner == self.context["request"].user
     # view.py에서부터 전달받은 객체를(http request에서 추출한) 사용하는것
     # 예) 현재 사용자가 로그인했는지 여부
@@ -73,6 +87,8 @@ class RoomDetailSerializer(ModelSerializer):
     # read_only는 room 객체 생성 시 photos의 값을 받아도 무시, 외부에서 생성된 사진을 받아서 표시만 한다는 뜻
     # photo 객체는 단독으로 생성해야한다는 의미
     # photos라는 필드는 현재 Room 모델의 필드값이 아님, 외부에서 받아서 표시하는것(reverse accessor 사용)
+    is_owner = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
 
     class Meta:
         model = Room
@@ -100,4 +116,7 @@ class RoomDetailSerializer(ModelSerializer):
         # room 객체의 owner와 request의 user(로그인 중인 사용자)가 동일한지 비교
         # 해당 필드가 true일 때 유저에게 수정, 삭제 등의 기능을 보여주는 등 활용 가능
 
+    def get_is_liked(self, room):
+        request = self.context["request"]
+        return Wishlist.objects.filter(user=request.user, rooms__pk=room.pk).exists()
     

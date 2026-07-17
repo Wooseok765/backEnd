@@ -113,7 +113,7 @@ class WishlistTogle(APIView):
         wishlist = self.get_list(pk, request.user)
         room = self.get_room(room_pk)
         if wishlist.rooms.filter(pk=room.pk).exists(): # 불러온 room 객체와 wishlist의 rooms객체들 중 일치하는게 있는지 확인하는것
-            # Wishlist.rooms는 manytomany이기에 filter가 있으며 이는 검색 중 일치하는 값이 나오면 바로 반환 하기에 저장된 모든 객체를 가져오고난 후 판단하는 .all()과 다름
+            # Wishlist.rooms는 manytomany이기에 filter가 있으며 이는 검색 중 일치하는 값들만 반환 하기에 저장된 모든 객체를 가져오고난 후 판단하는 .all()과 다름
             # .exists()를 썼기에 boolean반환함
             wishlist.rooms.remove(room) # list 형태인 rooms에서 room객체 하나를 삭제한는것
             return Response(status=HTTP_200_OK)
