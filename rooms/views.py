@@ -1,12 +1,7 @@
+from django.db import transaction
+from django.utils import timezone
 from rest_framework.views import APIView
 from rooms.models import Amenity, Room
-from rooms.serializer import (
-    AmenitySerializer,
-    AmenitySerializerAll,
-    RoomSerializer,
-    RoomListSerializer,
-    RoomDetailSerializer,
-)
 from rest_framework.response import Response
 from rest_framework.exceptions import (
     NotFound,
@@ -15,12 +10,20 @@ from rest_framework.exceptions import (
     PermissionDenied,
 )
 from rest_framework.status import HTTP_204_NO_CONTENT
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
+from rooms.serializer import (
+    AmenitySerializer,
+    AmenitySerializerAll,
+    RoomSerializer,
+    RoomListSerializer,
+    RoomDetailSerializer,
+)
 from categories.models import Category
-from django.db import transaction
 from reviews.serializer import ReviewSerializer
 from medias.serializers import PhotoSerializer
 from medias.models import Photo
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from bookings.models import Booking
+from bookings.serializer import PublicBookingSerializer
 
 # HTTP request가 get인 경우 누구나 통과시킴, 나머지 요청의 경우 사용자 일치여부 진행
 
@@ -39,7 +42,9 @@ class Amenities(APIView):
             amenity = serializer.save()  # 아직 serialize 안된 model object를 반환
             return Response(AmenitySerializer(amenity).data)
         else:
-            return Response(serializer.errors) # valid가 실패한 구체적인 오류내역(status= 구문이 생략된 형태(기본값으로 포함됨))
+            return Response(
+                serializer.errors
+            )  # valid가 실패한 구체적인 오류내역(status= 구문이 생략된 형태(기본값으로 포함됨))
 
 
 class AmenityDetail(APIView):
@@ -74,7 +79,9 @@ class AmenityDetail(APIView):
     def delete(self, request, pk):
         amenity = self.get_object(pk)
         amenity.delete()
-        return Response(status=HTTP_204_NO_CONTENT) # 별다른 내용없이 시스템 코드만 반환하여 보여주는 형태
+        return Response(
+            status=HTTP_204_NO_CONTENT
+        )  # 별다른 내용없이 시스템 코드만 반환하여 보여주는 형태
 
 
 class Rooms(APIView):
@@ -89,7 +96,7 @@ class Rooms(APIView):
             many=True,
             context={
                 "request": request,
-            },# 현재 HTTP 요청 객체를 serializer 내부로 전달해서, serializer가 요청 정보에 접근할 수 있게 하는 것
+            },  # 현재 HTTP 요청 객체를 serializer 내부로 전달해서, serializer가 요청 정보에 접근할 수 있게 하는 것
         )
         return Response(serilizer.data)
 
@@ -272,7 +279,6 @@ class RoomReviews(APIView):
             # user와 room은 Review 모델의 실제 필드명과 일치해야 한다.
             serializer = ReviewSerializer(review)
             return Response(serializer.data)
-      
 
 
 class RoomAmenity(APIView):
@@ -326,5 +332,48 @@ class RoomPhotos(APIView):
             # Photo 객체의 필드인 room(foreignkey type)의 값을 지정하는것(pk값으로 DB에서 가져온 객체)
             serializer = PhotoSerializer(photo)
             return Response(serializer.data)
+        else:
+            return Response(serializer.errors)
+
+
+class RoomBookings(APIView):
+    # 특정 Room에 연결된 예약 목록 조회 및 예약 생성을 처리한다.
+    # URL이 /rooms/<room_pk>/bookings 형태이고,
+    # 요청의 기준이 Booking이 아니라 Room이므로 rooms 앱의 view에 둔다.
+
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_object(self, pk):
+        try:
+            return Room.objects.get(pk=pk)
+        except Room.DoesNotExist:
+            raise ParseError("room not found")
+
+    def get(self, request, pk):
+        room = self.get_object(pk)
+        now = timezone.localtime(timezone.now()).date()
+        # timezone.localtime(timezone.now()) 현지 시각 반환함. date()를 추가하면 시간은 생략된 날짜만 반환함
+        bookings = Booking.objects.filter(
+            room=room,
+            kind=Booking.KindOfBookingChoice.ROOM,
+            check_in__gt=now,
+            # check_in의 값이 now의 값을 초과하는 조건을 충족하는 booking 객체를 반환하게함
+        )
+        # 선택필드인 kind의 값(클래스에서 선택된 값이 ROOM인 경우)
+        # DB를 2번 조회하여 room객체 존재여부까지 검증
+        """
+        bookings = Booking.objects.filter(room__pk = pk)
+        # 유저가 보낸 룸 id(pk)가 포함된 booking들을 전부 보냄
+        # 유저가 보낸 id와 일치하는 room객체의 존재여부 검증안함, DB조회를 한 번만 한다는 의미, Relationship으로 filter할 때 자주 쓰이는 방법
+        # 없을경우 empty queryset 반환함
+        """
+        serializer = PublicBookingSerializer(bookings, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, pk):
+        room = self.get_object(pk)
+        serializer = PublicBookingSerializer(data=request.data)
+        if serializer.is_valid():
+            pass
         else:
             return Response(serializer.errors)
