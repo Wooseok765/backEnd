@@ -39,7 +39,7 @@ class Amenities(APIView):
             amenity = serializer.save()  # 아직 serialize 안된 model object를 반환
             return Response(AmenitySerializer(amenity).data)
         else:
-            return Response(serializer.errors)
+            return Response(serializer.errors) # valid가 실패한 구체적인 오류내역(status= 구문이 생략된 형태(기본값으로 포함됨))
 
 
 class AmenityDetail(APIView):
@@ -74,7 +74,7 @@ class AmenityDetail(APIView):
     def delete(self, request, pk):
         amenity = self.get_object(pk)
         amenity.delete()
-        return Response(status=HTTP_204_NO_CONTENT)
+        return Response(status=HTTP_204_NO_CONTENT) # 별다른 내용없이 시스템 코드만 반환하여 보여주는 형태
 
 
 class Rooms(APIView):

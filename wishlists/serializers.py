@@ -10,6 +10,7 @@ class WishlistSerializer(ModelSerializer):
     class Meta : 
         model = Wishlist
         fields = (
+            "pk",
             "name",
             "rooms", # wishlist객체가 가지고있는 relational field인데 여기에 작성하면 입력하는 유저가 직접 작성한다는 의미
             # serializer는 DB에서 객체를 가져올 때(get), 수정/삭제/업로드할 때 모두 사용함

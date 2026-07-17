@@ -45,6 +45,7 @@ class RoomListSerializer(ModelSerializer):
     rating = serializers.SerializerMethodField()
     is_owner = serializers.SerializerMethodField()
     photos = PhotoSerializer(many=True,read_only=True)
+    # serializer method fields(모델에 실제 필드가 없거나, 그대로 보여주면 원하는 형태가 아닐 때, serializer에서 값을 직접 계산해서 출력하기 위해 사용, 읽기전용이다, 필드값을 구현할 전용함수필요)
 
     def get_is_owner(self, room):
         return room.owner == self.context["request"].user
