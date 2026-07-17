@@ -23,7 +23,7 @@ from reviews.serializer import ReviewSerializer
 from medias.serializers import PhotoSerializer
 from medias.models import Photo
 from bookings.models import Booking
-from bookings.serializer import PublicBookingSerializer
+from bookings.serializer import PublicBookingSerializer, CreatRoomBookingSerializer
 
 # HTTP request가 get인 경우 누구나 통과시킴, 나머지 요청의 경우 사용자 일치여부 진행
 
@@ -372,8 +372,10 @@ class RoomBookings(APIView):
 
     def post(self, request, pk):
         room = self.get_object(pk)
-        serializer = PublicBookingSerializer(data=request.data)
+        serializer = CreatRoomBookingSerializer(data=request.data)
         if serializer.is_valid():
-            pass
+            return Response({'ok':True})            
         else:
             return Response(serializer.errors)
+        
+        
