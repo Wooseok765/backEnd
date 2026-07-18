@@ -373,8 +373,17 @@ class RoomBookings(APIView):
     def post(self, request, pk):
         room = self.get_object(pk)
         serializer = CreatRoomBookingSerializer(data=request.data)
-        if serializer.is_valid():
-            return Response({'ok':True})            
+        # 유저가 보낸 데이터를 검증하고 Booking 객체를 생성하는 것, 이 직렬화 클래스로 생성된 객체를 Response(00.data) 할 경우 원하는 형태의 데이터가 테이블에 저장되지 않을 수 있다(왜냐하면 create 어쩌고 직렬화 클래스는 검증용으로 만들었기에 최소한의 field만 호출하여 사용했기때문)
+        if serializer.is_valid(): # 이 코드가 실행될 때 직렬화 클래스 내부의 validate 함수 작동함
+            booking = serializer.save(
+                room=room, # booking모델이 이미 room field를 가지고 있지만 직렬화 클래스의 필드에 room을 표기하면 사용자가 예약할 때 방 번호를 직접 입력하게된다는 의미
+                # 예약 시작을 해당 방 게시물에서 시작한다면 url에서 방 번호를 받아올 수 있게되어 유저가 직접 입력하지 않아도 적용 가능함 그래서 room field의 값을 따로 보내는것
+                user=request.user,
+                kind=Booking.KindOfBookingChoice.ROOM,
+            )
+            serializer = PublicBookingSerializer(booking)
+            # 최종적으로 입력하고싶은 형태가 정의된 직렬화를 사용
+            return Response(serializer.data) # 이때 data가 JSON으로 변환됨
         else:
             return Response(serializer.errors)
         
