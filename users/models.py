@@ -31,7 +31,7 @@ class User(AbstractUser):
         default="",
     )
     is_host = models.BooleanField(default=False)
-    profile_photo = models.ImageField(blank=True)
+    profile_photo = models.URLField(blank=True)
     gender = models.CharField(
         default="null",
         max_length=140,
